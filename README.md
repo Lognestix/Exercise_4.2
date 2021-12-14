@@ -190,13 +190,56 @@ public class TicketInformationTest {
 }
 ```
 ```Java
+package ru.netology.domain;
+
+import java.util.Comparator;
+
+public class TicketByTravelTimeAscComparator implements Comparator<TicketInformation> {
+  public int compare(TicketInformation t1, TicketInformation t2) {
+    return t1.getTravelTime() - t2.getTravelTime();
+  }
+}
+```
+```Java
+package ru.netology.domain;
+
+import org.junit.jupiter.api.Test;
+
+import java.util.Arrays;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class TicketByTravelTimeAscComparatorTest {
+    //Общие данные:
+    private final TicketByTravelTimeAscComparator comparator = new TicketByTravelTimeAscComparator();
+
+    private final TicketInformation zero = new TicketInformation(0, 25_000, "ALA", "DME", 280);
+    private final TicketInformation first = new TicketInformation(1, 5_000, "ALA", "CIT", 60);
+    private final TicketInformation second = new TicketInformation(2, 5_500, "ALA", "CIT", 85);
+    private final TicketInformation third = new TicketInformation(3, 1_800, "DME", "LED", 110);
+    private final TicketInformation fourth = new TicketInformation(4, 2_500, "DME", "LED", 90);
+    private final TicketInformation fifth = new TicketInformation(5, 2_600, "DME", "LED", 100);
+    private final TicketInformation sixth = new TicketInformation(6, 3_100, "CIT", "ALA", 70);
+    private final TicketInformation seventh = new TicketInformation(7, 35_000, "CIT", "LRH", 2_205);
+
+    //Unit-тест логики класса TicketByTravelTimeAscComparator
+    @Test
+    public void shouldSortByTime() {
+        TicketInformation[] expected = new TicketInformation[] {first, sixth, second, fourth, fifth, third, zero, seventh};
+        TicketInformation[] actual = new TicketInformation[] {zero, first, second, third, fourth, fifth, sixth, seventh};
+        Arrays.sort(actual, comparator);
+        assertArrayEquals(expected, actual);
+    }
+}
+```
+```Java
 package ru.netology.manager;
 
 import ru.netology.domain.TicketInformation;
 import ru.netology.repository.TicketRepository;
 
 import java.util.Arrays;
-
+import java.util.Comparator;
 
 public class TicketManager {
   //Добавление необходимыех полей, конструкторов и методов
@@ -211,7 +254,7 @@ public class TicketManager {
   public void removeById(int id) { repository.removeById(id); }
 
   //Отображение всех билетов, соотвествующих запросу по аэропорту вылета и аэропорту прилёта
-  public TicketInformation[] findAll(String departureAirport, String arrivalAirport) {
+  public TicketInformation[] findAll(String departureAirport, String arrivalAirport, Comparator<TicketInformation> comparator) {
     TicketInformation[] tickets = repository.findAll();
     TicketInformation[] result = new TicketInformation[0];
     for (TicketInformation ticket : tickets) {
@@ -223,7 +266,7 @@ public class TicketManager {
         tmp[lastIndex] = ticket;
         result = tmp;
       }
-      Arrays.sort(result);  //Сортировка билетов по цене от меньшей к большей
+      Arrays.sort(result, comparator);  //Сортировка билетов
     }
     return result;
   }
@@ -244,6 +287,7 @@ package ru.netology.manager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ru.netology.domain.NotFoundException;
+import ru.netology.domain.TicketByTravelTimeAscComparator;
 import ru.netology.domain.TicketInformation;
 import ru.netology.repository.TicketRepository;
 
@@ -253,6 +297,7 @@ class TicketManagerTest {
     //Общие данные:
     private final TicketRepository repository = new TicketRepository();
     private final TicketManager ticketManager = new TicketManager(repository);
+    private final TicketByTravelTimeAscComparator comparator = new TicketByTravelTimeAscComparator();
 
     private final TicketInformation zero = new TicketInformation(0, 25_000, "ALA", "DME", 280);
     private final TicketInformation first = new TicketInformation(2, 5_500, "ALA", "CIT", 85);
@@ -280,7 +325,8 @@ class TicketManagerTest {
         ticketManager.removeById(3);
         ticketManager.removeById(5);
         TicketInformation[] expected = new TicketInformation[] {fourth};
-        TicketInformation[] actual = ticketManager.findAll("DME","LED");
+        TicketInformation[] actual = ticketManager.findAll("DME","LED", TicketInformation::compareTo);
+        assertArrayEquals(expected, actual);
     }
 
     @Test   //Тест на удаление по id - исключение
@@ -294,14 +340,21 @@ class TicketManagerTest {
     @Test   //Тест на правильный поиск по полям вылета и прилёта
     public void shouldCorrectSearch() {
         TicketInformation[] expected = new TicketInformation[] {second, first};
-        TicketInformation[] actual = ticketManager.findAll("ALA","CIT");
+        TicketInformation[] actual = ticketManager.findAll("ALA","CIT", TicketInformation::compareTo);
         assertArrayEquals(expected, actual);
     }
 
     @Test   //Тест на отсутсвие значения при поиске
     public void shouldMissingValue() {
         TicketInformation[] expected = new TicketInformation[0];
-        TicketInformation[] actual = ticketManager.findAll("ALA", "LRH");
+        TicketInformation[] actual = ticketManager.findAll("ALA", "LRH", TicketInformation::compareTo);
+        assertArrayEquals(expected, actual);
+    }
+
+    @Test   //Тест сортировки результатов поиска по компаратору(время проведенное в пути)
+    public void shouldSortingSearchResultsByComparator() {
+        TicketInformation[] expected = new TicketInformation[] {fourth, fifth, third};
+        TicketInformation[] actual = ticketManager.findAll("DME","LED", comparator);
         assertArrayEquals(expected, actual);
     }
 }

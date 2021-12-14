@@ -4,7 +4,7 @@ import ru.netology.domain.TicketInformation;
 import ru.netology.repository.TicketRepository;
 
 import java.util.Arrays;
-
+import java.util.Comparator;
 
 public class TicketManager {
   //Добавление необходимыех полей, конструкторов и методов
@@ -19,7 +19,7 @@ public class TicketManager {
   public void removeById(int id) { repository.removeById(id); }
 
   //Отображение всех билетов, соотвествующих запросу по аэропорту вылета и аэропорту прилёта
-  public TicketInformation[] findAll(String departureAirport, String arrivalAirport) {
+  public TicketInformation[] findAll(String departureAirport, String arrivalAirport, Comparator<TicketInformation> comparator) {
     TicketInformation[] tickets = repository.findAll();
     TicketInformation[] result = new TicketInformation[0];
     for (TicketInformation ticket : tickets) {
@@ -31,7 +31,7 @@ public class TicketManager {
         tmp[lastIndex] = ticket;
         result = tmp;
       }
-      Arrays.sort(result);  //Сортировка билетов по цене от меньшей к большей
+      Arrays.sort(result, comparator);  //Сортировка билетов
     }
     return result;
   }
