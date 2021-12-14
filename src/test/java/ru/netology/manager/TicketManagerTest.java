@@ -3,6 +3,7 @@ package ru.netology.manager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ru.netology.domain.NotFoundException;
+import ru.netology.domain.TicketByTravelTimeAscComparator;
 import ru.netology.domain.TicketInformation;
 import ru.netology.repository.TicketRepository;
 
@@ -12,6 +13,7 @@ class TicketManagerTest {
     //Общие данные:
     private final TicketRepository repository = new TicketRepository();
     private final TicketManager ticketManager = new TicketManager(repository);
+    private final TicketByTravelTimeAscComparator comparator = new TicketByTravelTimeAscComparator();
 
     private final TicketInformation zero = new TicketInformation(0, 25_000, "ALA", "DME", 280);
     private final TicketInformation first = new TicketInformation(2, 5_500, "ALA", "CIT", 85);
@@ -39,7 +41,7 @@ class TicketManagerTest {
         ticketManager.removeById(3);
         ticketManager.removeById(5);
         TicketInformation[] expected = new TicketInformation[] {fourth};
-        TicketInformation[] actual = ticketManager.findAll("DME","LED");
+        TicketInformation[] actual = ticketManager.findAll("DME","LED", TicketInformation::compareTo);
         assertArrayEquals(expected, actual);
     }
 
@@ -54,14 +56,21 @@ class TicketManagerTest {
     @Test   //Тест на правильный поиск по полям вылета и прилёта
     public void shouldCorrectSearch() {
         TicketInformation[] expected = new TicketInformation[] {second, first};
-        TicketInformation[] actual = ticketManager.findAll("ALA","CIT");
+        TicketInformation[] actual = ticketManager.findAll("ALA","CIT", TicketInformation::compareTo);
         assertArrayEquals(expected, actual);
     }
 
     @Test   //Тест на отсутсвие значения при поиске
     public void shouldMissingValue() {
         TicketInformation[] expected = new TicketInformation[0];
-        TicketInformation[] actual = ticketManager.findAll("ALA", "LRH");
+        TicketInformation[] actual = ticketManager.findAll("ALA", "LRH", TicketInformation::compareTo);
+        assertArrayEquals(expected, actual);
+    }
+
+    @Test   //Тест сортировки результатов поиска по компаратору(время проведенное в пути)
+    public void shouldSortingSearchResultsByComparator() {
+        TicketInformation[] expected = new TicketInformation[] {fourth, fifth, third};
+        TicketInformation[] actual = ticketManager.findAll("DME","LED", comparator);
         assertArrayEquals(expected, actual);
     }
 }
