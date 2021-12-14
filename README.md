@@ -281,6 +281,7 @@ class TicketManagerTest {
         ticketManager.removeById(5);
         TicketInformation[] expected = new TicketInformation[] {fourth};
         TicketInformation[] actual = ticketManager.findAll("DME","LED");
+        assertArrayEquals(expected, actual);
     }
 
     @Test   //Тест на удаление по id - исключение
